@@ -44,13 +44,16 @@ function parseCSV(csv: string): Array<{ [key: string]: string }> {
 }
 
 async function applyTemplate(template: FrameNode, data: { [key: string]: string }) {
+  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+
   const clone = template.clone();
-  clone.name = `Creative - ${data['username'] || 'Unnamed'}`;
+  clone.name = `Creative - ${data['number'] || 'Unnamed'}`;
   figma.currentPage.appendChild(clone);
 
   const textNodes = clone.findAll(node => node.type === 'TEXT') as TextNode[];
   for (const textNode of textNodes) {
-    const key = textNode.name.replace('text_', '');
+    const key: string = textNode.name.replace('text_', '').trim();
+
     if (data[key]) {
       textNode.characters = data[key];
       textNode.resize(textNode.width, textNode.height);
@@ -62,7 +65,7 @@ async function applyTemplate(template: FrameNode, data: { [key: string]: string 
   }) as RectangleNode[];
 
   for (const imageNode of imageNodes) {
-    const key = imageNode.name.replace('image_', '');
+    const key = imageNode.name.replace('image_', '').trim();
     if (data[key]) {
       const imageHash = await loadImageAsync(data[key]);
       if (imageHash) {
