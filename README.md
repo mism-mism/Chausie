@@ -189,4 +189,3 @@ If you encounter any issues or have questions, feel free to open an issue on the
 ---
 
 © 2025 Chausie Plugin. All rights reserved.
-```
