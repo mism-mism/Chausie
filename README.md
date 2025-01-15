@@ -1,40 +1,192 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# Chausie Figma Plugin
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+Chausie is a powerful Figma plugin designed to streamline your design workflow by automatically integrating data from spreadsheets into your Figma templates. With Chausie, you can effortlessly generate hundreds of creative assets by populating text and images based on your data, saving you time and ensuring consistency across your designs.
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+## 🛠️ Features
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+- **Bulk Data Integration**: Import data from CSV spreadsheets to populate multiple templates simultaneously.
+- **Automated Text Replacement**: Automatically replace text layers in your templates with data from your spreadsheet.
+- **Dynamic Image Replacement**: Replace image placeholders in your templates with images from URLs specified in your data.
+- **Easy Export**: Export generated creatives as PNG images directly from Figma.
+- **User-Friendly Interface**: Intuitive drag-and-drop interface for uploading your CSV files.
 
-  https://nodejs.org/en/download/
+## 📦 Installation
 
-Next, install TypeScript using the command:
+1. **Clone the Repository**
 
-  npm install -g typescript
+```bash
+git clone https://github.com/your-username/automator-plugin.git
+cd automator-plugin
+```
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+2. **Install Dependencies**
 
-  npm install --save-dev @figma/plugin-typings
+Ensure you have [Node.js](https://nodejs.org/) installed. Then, install the necessary packages:
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+```bash
+npm install
+```
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+3. **Build the Plugin**
 
-For more information, visit https://www.typescriptlang.org/
+Compile the TypeScript code to JavaScript:
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
+```bash
+npm run build
+```
 
-We recommend writing TypeScript code using Visual Studio code:
+4. **Load the Plugin in Figma**
 
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
+- Open Figma.
+- Navigate to **Plugins > Development > Import Plugin from Manifest...**
+- Select the `manifest.json` file from the cloned repository.
 
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+## 📖 Usage
+
+### 1. **Prepare Your Template in Figma**
+
+Ensure your Figma template is set up with consistent naming conventions for text and image layers:
+
+- **Text Layers**: Name your text layers using the prefix `text_` followed by the corresponding CSV header.  
+**Example**: For a CSV header `username`, name the text layer `text_username`.
+
+- **Image Layers**: Name your image layers using the prefix `image_` followed by the corresponding CSV header.  
+**Example**: For a CSV header `profile_image`, name the image layer `image_profile_image`.
+
+### 2. **Prepare Your CSV File**
+
+Create a CSV file with headers matching the layer names in your Figma template (without the prefixes).  
+**Example CSV Structure**:
+
+```csv
+username,profile_image,bio
+JohnDoe,https://example.com/images/johndoe.png,Software Developer at XYZ Corp.
+JaneSmith,https://example.com/images/janesmith.png,Graphic Designer at ABC Studio.
+```
+
+### 3. **Run the Chausie Plugin**
+
+1. **Open the Plugin Interface**:
+- In Figma, go to **Plugins > Development > Chausie**.
+
+2. **Upload Your CSV File**:
+- Drag and drop your CSV file into the designated drop zone in the plugin interface.
+- The drop zone will confirm the file has been loaded.
+
+3. **Generate Creatives**:
+- Click the **"クリエイティブ生成"** (Generate Creatives) button.
+- The plugin will process the data, clone the template for each row in the CSV, replace the text and images accordingly, and export each creative as a PNG image.
+
+4. **Download Generated Images**:
+- After processing, the plugin will prompt downloads for each generated image.
+
+## ⚙️ Configuration
+
+### **manifest.json**
+
+Ensure your `manifest.json` is correctly configured:
+
+```json
+{
+"name": "Chausie",
+"id": "automator-plugin",
+"api": "1.0.0",
+"main": "code.js",
+"ui": "ui.html",
+"editorType": ["figma"],
+"permissions": ["currentpage"]
+}
+```
+
+### **TypeScript Configuration**
+
+Your `tsconfig.json` should be set to compile TypeScript correctly:
+
+```json
+{
+"compilerOptions": {
+"module": "commonjs",
+"target": "es6",
+"lib": ["es6", "dom"],
+"strict": true,
+"noImplicitAny": true,
+"outDir": "./",
+"rootDir": "./",
+"esModuleInterop": true
+},
+"include": ["code.ts"]
+}
+```
+
+## 🧩 Code Structure
+
+### **code.ts**
+
+The main plugin logic handles parsing the CSV, cloning templates, replacing text and images, and exporting the final creatives.
+
+### **ui.html**
+
+The user interface allows users to upload their CSV files and initiate the creative generation process.
+
+### **styles.css**
+
+Contains any additional styles for the plugin UI. Currently, styles are embedded within `ui.html`, but you can externalize them if needed.
+
+### **package.json**
+
+Manages project dependencies and scripts for building the plugin.
+
+## 🔧 Development
+
+### **Building the Plugin**
+
+To watch for changes and automatically rebuild the plugin during development:
+
+```bash
+npm run watch
+```
+
+### **Testing the Plugin**
+
+1. **Load the Plugin in Figma** as described in the [Installation](#installation) section.
+2. **Run the Plugin** and verify that it correctly processes your CSV data and generates the desired creatives.
+3. **Debugging**:
+- Open the **Developer Console** in Figma by pressing `Ctrl + Shift + I` (Windows) or `Cmd + Option + I` (Mac) to view logs and debug errors.
+
+## 📝 Contributing
+
+Contributions are welcome! Please follow these steps to contribute:
+
+1. **Fork the Repository**
+2. **Create a Feature Branch**
+
+```bash
+git checkout -b feature/YourFeature
+```
+
+3. **Commit Your Changes**
+
+```bash
+git commit -m "Add your feature"
+```
+
+4. **Push to the Branch**
+
+```bash
+git push origin feature/YourFeature
+```
+
+5. **Open a Pull Request**
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## 📞 Support
+
+If you encounter any issues or have questions, feel free to open an issue on the [GitHub repository](https://github.com/your-username/automator-plugin/issues) or contact the maintainer directly.
+
+---
+
+© 2025 Chausie Plugin. All rights reserved.
+```
