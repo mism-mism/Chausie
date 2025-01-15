@@ -15,8 +15,8 @@ Chausie is a powerful Figma plugin designed to streamline your design workflow b
 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/your-username/automator-plugin.git
-cd automator-plugin
+git clone https://github.com/mism-mism/Chausie.git
+cd Chausie
 ```
 
 2. **Install Dependencies**
