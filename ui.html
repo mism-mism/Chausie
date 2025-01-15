@@ -1,17 +1,88 @@
-<h2>Rectangle Creator</h2>
-<p>Count: <input id="count" type="number" value="5"></p>
-<button id="create">Create</button>
-<button id="cancel">Cancel</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Automator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            width: 300px;
+        }
+        .drop-zone {
+            width: 100%;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        .drop-zone.dragover {
+            border-color: #333;
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 10px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<h2>Automator</h2>
+<div class="drop-zone" id="drop-zone">スプレッドシートをここにドラッグ＆ドロップ</div>
+<button id="generate">クリエイティブ生成</button>
+<div id="status"></div>
+
 <script>
+    const dropZone = document.getElementById('drop-zone');
+    let csvData = null;
 
-document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
-  const count = parseInt(textbox.value, 10);
-  parent.postMessage({ pluginMessage: { type: 'create-shapes', count } }, '*')
-}
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
 
-document.getElementById('cancel').onclick = () => {
-  parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
-}
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
 
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = () => {
+                csvData = reader.result;
+                dropZone.innerText = `「${file.name}」 がロードされました`;
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    document.getElementById('generate').onclick = () => {
+        if (!csvData) {
+            parent.postMessage({ pluginMessage: { type: 'status', message: 'CSVをアップロードしてください。' } }, '*');
+            return;
+        }
+        parent.postMessage({ pluginMessage: { type: 'generate', data: csvData } }, '*');
+    };
+
+    window.onmessage = (event) => {
+        const { type, message } = event.data.pluginMessage;
+        if (type === 'status') {
+            document.getElementById('status').innerText = message;
+        }
+    };
 </script>
+</body>
+</html>

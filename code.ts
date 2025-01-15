@@ -1,37 +1,93 @@
-// This plugin will open a window to prompt the user to enter a number, and
-// it will then create that many rectangles on the screen.
+// code.ts
+figma.showUI(__html__, { width: 320, height: 400 });
 
-// This file holds the main code for plugins. Code in this file has access to
-// the *figma document* via the figma global object.
-// You can access browser APIs in the <script> tag inside "ui.html" which has a
-// full browser environment (See https://www.figma.com/plugin-docs/how-plugins-run).
+figma.ui.onmessage = async (msg) => {
+  if (msg.type === 'generate') {
+    figma.ui.postMessage({ type: 'status', message: 'データを処理中...' });
 
-// This shows the HTML page in "ui.html".
-figma.showUI(__html__);
+    try {
+      const data = parseCSV(msg.data);
+      figma.ui.postMessage({ type: 'status', message: 'データを取得しました。テンプレートを適用中...' });
 
-// Calls to "parent.postMessage" from within the HTML page will trigger this
-// callback. The callback will be passed the "pluginMessage" property of the
-// posted message.
-figma.ui.onmessage =  (msg: {type: string, count: number}) => {
-  // One way of distinguishing between different types of messages sent from
-  // your HTML page is to use an object with a "type" property like this.
-  if (msg.type === 'create-shapes') {
-    // This plugin creates rectangles on the screen.
-    const numberOfRectangles = msg.count;
+      const template = figma.currentPage.findOne(node => node.type === 'FRAME' && node.name === 'Template') as FrameNode;
 
-    const nodes: SceneNode[] = [];
-    for (let i = 0; i < numberOfRectangles; i++) {
-      const rect = figma.createRectangle();
-      rect.x = i * 150;
-      rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0.5, b: 0 } }];
-      figma.currentPage.appendChild(rect);
-      nodes.push(rect);
+      if (!template) {
+        figma.ui.postMessage({ type: 'status', message: '「Template」という名前のフレームが見つかりません。' });
+        return;
+      }
+
+      for (const entry of data) {
+        await applyTemplate(template, entry);
+      }
+
+      figma.ui.postMessage({ type: 'status', message: 'すべてのクリエイティブを生成しました。' });
+      figma.notify('クリエイティブの生成が完了しました。');
+    } catch (error) {
+      figma.ui.postMessage({ type: 'status', message: `エラーが発生しました: ${error}` });
+      figma.notify('クリエイティブの生成中にエラーが発生しました。');
     }
-    figma.currentPage.selection = nodes;
-    figma.viewport.scrollAndZoomIntoView(nodes);
+  }
+};
+
+function parseCSV(csv: string): Array<{ [key: string]: string }> {
+  const lines = csv.trim().split('\n');
+  const headers = lines[0].split(',').map(header => header.trim());
+  const data = lines.slice(1).map(line => {
+    const values = line.split(',').map(value => value.trim());
+    const entry: { [key: string]: string } = {};
+    headers.forEach((header, index) => {
+      entry[header] = values[index] || '';
+    });
+    return entry;
+  });
+  return data;
+}
+
+async function applyTemplate(template: FrameNode, data: { [key: string]: string }) {
+  const clone = template.clone();
+  clone.name = `Creative - ${data['username'] || 'Unnamed'}`;
+  figma.currentPage.appendChild(clone);
+
+  const textNodes = clone.findAll(node => node.type === 'TEXT') as TextNode[];
+  for (const textNode of textNodes) {
+    const key = textNode.name.replace('text_', '');
+    if (data[key]) {
+      textNode.characters = data[key];
+      textNode.resize(textNode.width, textNode.height);
+    }
   }
 
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
-};
+  const imageNodes = clone.findAll(node => {
+    return node.type === 'RECTANGLE' && Array.isArray(node.fills) && node.fills.some((fill: Paint) => fill.type === 'IMAGE');
+  }) as RectangleNode[];
+
+  for (const imageNode of imageNodes) {
+    const key = imageNode.name.replace('image_', '');
+    if (data[key]) {
+      const imageHash = await loadImageAsync(data[key]);
+      if (imageHash) {
+        imageNode.fills = [{ type: 'IMAGE', imageHash, scaleMode: 'FILL' }];
+      }
+    }
+  }
+
+  const imageBytes = await clone.exportAsync({ format: 'PNG' });
+  figma.ui.postMessage({ type: 'export', filename: `${clone.name}.png`, data: Array.from(imageBytes) });
+}
+
+async function loadImageAsync(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`画像の取得に失敗しました: ${url}`);
+      return null;
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const imageBytes = new Uint8Array(arrayBuffer);
+    const imageHash = figma.createImage(imageBytes).hash;
+    return imageHash;
+  } catch (error) {
+    console.error(`画像の読み込み中にエラーが発生しました: ${error}`);
+    return null;
+  }
+}
